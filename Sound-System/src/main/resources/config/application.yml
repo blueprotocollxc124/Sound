@@ -1,0 +1,19 @@
+# 端口
+server:
+  port: 80
+
+spring:
+  #环境配置
+  profiles:
+    active: prod
+
+
+weixin:
+  login:
+    appid: wxe626ab68965d47b3
+    secret: 5c20d5cfd591676c1a0a06b4e52ccdb1
+
+
+
+
+

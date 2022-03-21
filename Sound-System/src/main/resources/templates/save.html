@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th=http://www.thymeleaf.org>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+  <form >
+    <input type="text" name="name" id="name"  size="10"><br>
+      <input type="password" name="password"  id="password" size="10"><br>
+      <input type="text" name="phone" id="phone" size="10"><br>
+      <input type="submit" value="提交" onclick="a()">
+  </form>
+</body>
+<script th:src="@{~/static/jquery-3.6.js}"></script>
+<script type="text/javascript">
+        var  a = function () {
+    $.post({
+        url: "/yuansystem/student/insert",
+        contentType: 'application/json;charset=utf-8',
+        data: JSON.stringify({
+            name:$("#name").val(),
+            password: $("#password").val(),
+            phone: $("#phone").val()
+        })
+    });
+        }
+</script>
+</html>
