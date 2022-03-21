@@ -155,63 +155,10 @@ public class CourseController extends BaseController implements ApplicationConte
         Course course = Optional.ofNullable(courseService.getById(courseId))
                 .orElseThrow(() -> new NotSuchObjectException("Course对象为空"));
         CourseVO courseVo = getCourseVo(course);
-        Map<Object, Object> studentIdMap = redisUtil.hmget(studentId);
-        boolean hasRecentlyCourse = redisUtil.hasHasKey(studentId, "recentlyCourse");
-        if(hasRecentlyCourse==false) {
-            ArrayList<CourseVO> recentlyInitList = new ArrayList<CourseVO>();
-            studentIdMap.put("recentlyCourse",recentlyInitList);
-            Map<String, Object> studentIdInitRecentlyCourseMap = MapUtil.objectToStringMap(studentIdMap);
-            redisUtil.hmset(studentId,studentIdInitRecentlyCourseMap);
-
+        boolean addToRedis = addStudentRecentlyCourseToRedis(studentId, courseVo);
+        if(addToRedis==false) {
+            return ResultBean.bad().setMessage("服务端在记录学生最近课程的时候出现了问题");
         }
-
-            boolean hasRecentlyCourseCount = redisUtil.hasHasKey(studentId, "recentlyCourseCount");
-            if(hasRecentlyCourseCount==false) {
-                int CourseCount = 0;
-                studentIdMap.put("recentlyCourseCount", CourseCount);
-                Map<String, Object> studentIdMapAddCount = MapUtil.objectToStringMap(studentIdMap);
-                redisUtil.hmset(studentId, studentIdMapAddCount);
-            }
-            int recentlyCourseCount = (int) studentIdMap.get("recentlyCourseCount");
-        List<CourseVO> studentRecentlyCourseList = JSON.parseArray(studentIdMap.get("recentlyCourse").toString(), CourseVO.class);
-                if (studentRecentlyCourseList.size() != 2) {
-                    System.out.println(studentRecentlyCourseList.size());
-                    if(studentRecentlyCourseList.size()==0) {
-                        studentRecentlyCourseList.add(courseVo);
-                    } else {
-                    int distinct =0;
-                    for (CourseVO courseVO : studentRecentlyCourseList) {
-                        if(courseVO.getCourseId().equals(courseVo.getCourseId())) {
-                            distinct++;
-                        }
-                    }
-                    if(distinct==0) {
-                        studentRecentlyCourseList.add(courseVo);
-                    }
-                    }
-            }
-            else {
-                    int distinct = 0;
-                    for (CourseVO courseVO : studentRecentlyCourseList) {
-                        if(courseVO.getCourseId().equals(courseVo.getCourseId()) ) {
-                            distinct++;
-                        }
-                    }
-                    if(distinct==0) {
-                        studentRecentlyCourseList.set(recentlyCourseCount++, courseVo);
-                        if (recentlyCourseCount == 2) {
-                            recentlyCourseCount = 0;
-                        }
-                    }
-
-
-            }
-
-            studentIdMap.replace("recentlyCourse",studentRecentlyCourseList);
-            studentIdMap.replace("recentlyCourseCount",recentlyCourseCount);
-            Map<String, Object> studentIdMapStr = MapUtil.objectToStringMap(studentIdMap);
-            redisUtil.hmset(studentId,studentIdMapStr);
-
         return ResultBean.ok().setData(courseVo);
     }
 
@@ -258,6 +205,73 @@ public class CourseController extends BaseController implements ApplicationConte
                 .setCourseTeacher(teacher.getTeachername())
                 .setHeadAddr(course.getHeadAddr());
         return courseVO;
+    }
+
+
+
+    /**
+     * @Description: 记录学生最近课程的方法
+     * @date: 2022/3/21 18:27
+     * @Param: [studentId, courseVo]
+     * @return: boolean
+    */
+    public boolean addStudentRecentlyCourseToRedis(String studentId, CourseVO courseVo) {
+        Map<Object, Object> studentIdMap = redisUtil.hmget(studentId);
+        boolean hasRecentlyCourse = redisUtil.hasHasKey(studentId, "recentlyCourse");
+        if(hasRecentlyCourse==false) {
+            ArrayList<CourseVO> recentlyInitList = new ArrayList<CourseVO>();
+            studentIdMap.put("recentlyCourse",recentlyInitList);
+            Map<String, Object> studentIdInitRecentlyCourseMap = MapUtil.objectToStringMap(studentIdMap);
+            redisUtil.hmset(studentId,studentIdInitRecentlyCourseMap);
+
+        }
+
+        boolean hasRecentlyCourseCount = redisUtil.hasHasKey(studentId, "recentlyCourseCount");
+        if(hasRecentlyCourseCount==false) {
+            int CourseCount = 0;
+            studentIdMap.put("recentlyCourseCount", CourseCount);
+            Map<String, Object> studentIdMapAddCount = MapUtil.objectToStringMap(studentIdMap);
+            redisUtil.hmset(studentId, studentIdMapAddCount);
+        }
+        int recentlyCourseCount = (int) studentIdMap.get("recentlyCourseCount");
+        List<CourseVO> studentRecentlyCourseList = JSON.parseArray(studentIdMap.get("recentlyCourse").toString(), CourseVO.class);
+        if (studentRecentlyCourseList.size() != 2) {
+            System.out.println(studentRecentlyCourseList.size());
+            if(studentRecentlyCourseList.size()==0) {
+                studentRecentlyCourseList.add(courseVo);
+            } else {
+                int distinct =0;
+                for (CourseVO courseVO : studentRecentlyCourseList) {
+                    if(courseVO.getCourseId().equals(courseVo.getCourseId())) {
+                        distinct++;
+                    }
+                }
+                if(distinct==0) {
+                    studentRecentlyCourseList.add(courseVo);
+                }
+            }
+        }
+        else {
+            int distinct = 0;
+            for (CourseVO courseVO : studentRecentlyCourseList) {
+                if(courseVO.getCourseId().equals(courseVo.getCourseId()) ) {
+                    distinct++;
+                }
+            }
+            if(distinct==0) {
+                studentRecentlyCourseList.set(recentlyCourseCount++, courseVo);
+                if (recentlyCourseCount == 2) {
+                    recentlyCourseCount = 0;
+                }
+            }
+
+
+        }
+        studentIdMap.replace("recentlyCourse",studentRecentlyCourseList);
+        studentIdMap.replace("recentlyCourseCount",recentlyCourseCount);
+        Map<String, Object> studentIdMapStr = MapUtil.objectToStringMap(studentIdMap);
+        boolean set = redisUtil.hmset(studentId, studentIdMapStr);
+        return set;
     }
 
 

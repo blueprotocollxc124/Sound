@@ -8,3 +8,7 @@
 #####5、Common为公共模块
 #####6、Tools为工具模块
 #####7、Generate为MVC代码自动生成模块
+
+### 二、启动需要开启的服务
+#####1、ElasticSearch：7.15.1
+#####2、Redis
