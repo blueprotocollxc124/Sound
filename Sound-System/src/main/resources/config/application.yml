@@ -5,7 +5,7 @@ server:
 spring:
   #环境配置
   profiles:
-    active: prod
+    active: dev
 
 
 weixin:
